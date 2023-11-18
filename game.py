@@ -3,7 +3,7 @@ import random
 
 
 class PongGame:
-    def __init__(self):
+    def __init__(self, training=False):
         pygame.init()
 
         self.WIDTH = 900
@@ -31,8 +31,14 @@ class PongGame:
         self.window = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
         pygame.display.set_caption('Pong!')
 
+        # training
+        if training:
+            self.player_1_height = self.HEIGHT
+        else:
+            self.player_1_height = self.BAR_HEIGHT
+
         self.player_1 = pygame.Rect(
-            30, self.HEIGHT / 2, self.BAR_WIDTH, self.BAR_HEIGHT)
+            30, 0 / 2, self.BAR_WIDTH, self.player_1_height)
         self.player_2 = pygame.Rect(
             self.WIDTH - 30, self.HEIGHT / 2, self.BAR_WIDTH, self.BAR_HEIGHT)
 
