@@ -1,5 +1,6 @@
 import pygame
 import random
+import neat
 
 
 class PongGame:
@@ -28,17 +29,22 @@ class PongGame:
         self.player_1_score = 0
         self.player_2_score = 0
 
-        self.window = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
+        self.aiHits = 0
+
+        self.window = pygame.display.set_mode(
+            (self.WIDTH, self.HEIGHT))
         pygame.display.set_caption('Pong!')
 
         # training
         if training:
             self.player_1_height = self.HEIGHT
+            self.player_1_y = 0
         else:
             self.player_1_height = self.BAR_HEIGHT
+            self.player_1_y = self.HEIGHT / 2
 
         self.player_1 = pygame.Rect(
-            30, 0 / 2, self.BAR_WIDTH, self.player_1_height)
+            30, self.player_1_y, self.BAR_WIDTH, self.player_1_height)
         self.player_2 = pygame.Rect(
             self.WIDTH - 30, self.HEIGHT / 2, self.BAR_WIDTH, self.BAR_HEIGHT)
 
@@ -80,6 +86,9 @@ class PongGame:
 
         if self.ball.colliderect(self.player_1) or self.ball.colliderect(self.player_2):
             self.ball_vel[0] *= -1
+
+            if self.ball.colliderect(self.player_2):
+                self.aiHits += 1
 
     def draw_window(self):
         self.window.fill(self.BLACK)
@@ -132,9 +141,7 @@ class PongGame:
             self.handle_ball()
             self.draw_window()
 
-        pygame.quit()
-
 
 if __name__ == '__main__':
-    game = PongGame()
+    game = PongGame(False)
     game.run_game()
