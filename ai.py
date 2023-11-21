@@ -84,7 +84,7 @@ def run(config_path):
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
     p.add_reporter(neat.Checkpointer(1, filename_prefix='new_checkpoint_'))
-    winner = p.run(eval_genomes, 1)
+    winner = p.run(eval_genomes, 20)
     # save best genome obj
 
     with open('best_pong_ai.pkl', 'wb') as f:
