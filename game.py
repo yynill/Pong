@@ -32,7 +32,7 @@ class PongGame:
         self.aiHits = 0
 
         self.window = pygame.display.set_mode(
-            (self.WIDTH, self.HEIGHT))
+            (self.WIDTH, self.HEIGHT), pygame.NOFRAME)
         pygame.display.set_caption('Pong!')
 
         # training
@@ -75,13 +75,13 @@ class PongGame:
         if self.ball.left <= 0:
             self.player_2_score += 1
             self.ball.x = self.WIDTH / 2 - self.BALL_WIDTH
-            self.ball.y = random.randint(0, self.HEIGHT - self.BALL_HEIGHT)
+            self.ball.y = random.randint(1, self.HEIGHT - self.BALL_HEIGHT)
             self.ball_vel[0] *= -1
 
         if self.ball.right >= self.WIDTH:
             self.player_1_score += 1
             self.ball.x = self.WIDTH / 2 - self.BALL_WIDTH
-            self.ball.y = random.randint(0, self.HEIGHT - self.BALL_HEIGHT)
+            self.ball.y = random.randint(1, self.HEIGHT - self.BALL_HEIGHT)
             self.ball_vel[0] *= -1
 
         if self.ball.colliderect(self.player_1) or self.ball.colliderect(self.player_2):

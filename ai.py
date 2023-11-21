@@ -3,7 +3,7 @@ from game import PongGame
 import neat
 import os
 import visualize
-import time
+import pickle
 
 pygame.init()
 
@@ -13,21 +13,16 @@ class PongAi:
         self.genome = genome
         self.net = neat.nn.FeedForwardNetwork.create(self.genome, config)
         self.game = PongGame(True)
-        self.score_before = 0
-
-    def calculate_fitness(self):
-        self.genome.fitness += self.game.aiHits * 10
-        self.genome.fitness -= self.game.player_1_score * 5
 
     def train_ai(self):
         clock = pygame.time.Clock()
         run = True
 
         while run:
+            clock.tick(60)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    run = False
-                    break
+                    quit()
 
             self.player_2_y = self.game.player_2.y
             self.ball_y = self.game.ball.y
@@ -54,12 +49,14 @@ class PongAi:
             self.game.draw_window()
             pygame.display.update()
 
-            clock.tick(self.game.FPS)
-            time.sleep(0.01)
-
-            if self.genome.fitness >= 100 or self.game.player_1_score >= 5:
+            if self.game.aiHits >= 100 or self.game.player_1_score >= 10:
                 self.calculate_fitness()
+                self.game.aiHits = 0
                 break
+
+    def calculate_fitness(self):
+        self.genome.fitness += self.game.aiHits * 2
+        self.genome.fitness -= self.game.player_1_score
 
 
 def eval_genomes(genomes, config):
@@ -71,8 +68,7 @@ def eval_genomes(genomes, config):
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
+                break
 
 
 def run(config_path):
@@ -81,17 +77,80 @@ def run(config_path):
                          neat.DefaultSpeciesSet, neat.DefaultStagnation,
                          config_path)
 
-    p = neat.Population(config)
-    # Add a stdout reporter to show progress in the terminal.
+    p = neat.Checkpointer.restore_checkpoint('new_checkpoint_20')
+    # p = neat.Population(config)
+
     p.add_reporter(neat.StdOutReporter(True))
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
-    p.add_reporter(neat.Checkpointer(5, filename_prefix='pong_checkpoint_'))
-    winner = p.run(eval_genomes, 1)  # Run for one generation
-    print('\nBest genome:\n{!s}'.format(winner))
+    p.add_reporter(neat.Checkpointer(1, filename_prefix='new_checkpoint_'))
+    winner = p.run(eval_genomes, 1)
+    # save best genome obj
+
+    with open('best_pong_ai.pkl', 'wb') as f:
+        pickle.dump(winner, f)
+
+
+def test_ai_against_human(config_path, checkpoint_file):
+    config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
+                         neat.DefaultSpeciesSet, neat.DefaultStagnation,
+                         config_path)
+
+    try:
+        winner = pickle.load(open(checkpoint_file, 'rb'))
+        winner_net = neat.nn.FeedForwardNetwork.create(winner, config)
+        game = PongGame(False)
+
+    except Exception as e:
+        print(f"Error loading checkpoint file: {e}")
+        return
+
+    clock = pygame.time.Clock()
+    run = True
+    while run:
+        clock.tick(60)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                quit()
+
+        player_2_y = game.player_2.y
+        ball_y = game.ball.y
+        ball_x = game.ball.x
+        player_2_x = game.player_2.x
+
+        output = winner_net.activate(
+            (player_2_y,
+             ball_y,
+             abs(ball_x - player_2_x)))
+
+        decision = output.index(max(output))
+
+        if decision == 0:
+            if game.player_2.y < game.HEIGHT - game.BAR_HEIGHT:
+                game.player_2.y += game.VEL
+        elif decision == 1:
+            if game.player_2.y > 0:
+                game.player_2.y -= game.VEL
+        else:
+            pass
+
+        game.handle_ball()
+
+        keys_pressed = pygame.key.get_pressed()
+        game.player_1_movement(keys_pressed)
+        game.draw_window()
+        pygame.display.update()
 
 
 if __name__ == "__main__":
     config_path = os.path.join(os.getcwd(), "config.txt")
 
-    run(config_path)
+    # train ai #
+
+    # run(config_path)
+
+    # play against ai #
+
+    checkpoint_file = 'best_pong_ai.pkl'
+    test_ai_against_human(config_path, checkpoint_file)
